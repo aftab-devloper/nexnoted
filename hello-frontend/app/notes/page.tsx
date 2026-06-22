@@ -17,6 +17,7 @@ export default function Home() {
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [theme, setTheme] = useState('light');
+  const [aiLoading, setAiLoading] = useState<number | null>(null);
 
   const getToken = () => localStorage.getItem('token');
 
@@ -88,6 +89,36 @@ export default function Home() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     router.push('/login');
+  };
+
+  const callAI = async (type: 'improve' | 'summarize' | 'title', note: Note) => {
+    const token = getToken();
+    setAiLoading(note.id);
+    const res = await fetch(`http://localhost:3001/ai/${type}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ content: note.content }),
+    });
+    const data = await res.text();
+    setAiLoading(null);
+
+    if (type === 'title') {
+      await fetch(`http://localhost:3001/notes/${note.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ title: data, content: note.content }),
+      });
+    } else {
+      await fetch(`http://localhost:3001/notes/${note.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ title: note.title, content: data }),
+      });
+    }
+    fetchNotes();
   };
 
   return (
@@ -185,6 +216,30 @@ export default function Home() {
                   </button>
                   <button className="btn btn-danger" onClick={() => deleteNote(note.id)}>
                     🗑️ Delete
+                  </button>
+                  <button
+                    className="btn"
+                    style={{ background: 'var(--warning)', color: 'white' }}
+                    onClick={() => callAI('improve', note)}
+                    disabled={aiLoading === note.id}
+                  >
+                    {aiLoading === note.id ? '⏳...' : '✨ Improve'}
+                  </button>
+                  <button
+                    className="btn"
+                    style={{ background: 'var(--success)', color: 'white' }}
+                    onClick={() => callAI('summarize', note)}
+                    disabled={aiLoading === note.id}
+                  >
+                    {aiLoading === note.id ? '⏳...' : '📝 Summarize'}
+                  </button>
+                  <button
+                    className="btn"
+                    style={{ background: '#8b5cf6', color: 'white' }}
+                    onClick={() => callAI('title', note)}
+                    disabled={aiLoading === note.id}
+                  >
+                    {aiLoading === note.id ? '⏳...' : '💡 Title'}
                   </button>
                 </div>
               </div>
