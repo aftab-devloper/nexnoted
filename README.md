@@ -1,3 +1,4 @@
+# NexNotes — AI-Powered Smart Notes Application
 NexNotes — AI-Powered Smart Notes Application
 A production-ready full-stack notes application featuring JWT authentication, per-user data isolation, and AI-powered writing assistance built with modern technologies.
 
